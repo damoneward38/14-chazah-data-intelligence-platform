@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CHAZAH — Data Intelligence Platform</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#0b0f17;color:#e6edf3;min-height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:16px 24px;background:#0e1420;border-bottom:1px solid #1e2740;position:sticky;top:0;z-index:5}
+.logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#4f8cff,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:17px}
+h1{font-size:19px;margin:0;letter-spacing:.5px}
+h1 small{color:#8b93a7;font-weight:400;font-size:12px;display:block}
+.statsrow{display:flex;gap:12px;margin-left:auto}
+.stat{background:#121a2b;border:1px solid #1e2740;border-radius:10px;padding:6px 14px;text-align:center}
+.stat b{display:block;font-size:17px;color:#58a6ff}.stat span{font-size:10px;color:#8b93a7;text-transform:uppercase;letter-spacing:.5px}
+.wrap{max-width:1120px;margin:0 auto;padding:24px}
+.card{background:#0f1626;border:1px solid #1e2740;border-radius:12px;padding:20px;margin-bottom:18px}
+.card h2{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:#8b93a7;display:flex;align-items:center;justify-content:space-between}
+textarea#csv{width:100%;min-height:170px;background:#0a0f1b;border:1px solid #22304d;border-radius:8px;color:#dbe4f5;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:12px;resize:vertical;line-height:1.5}
+textarea#csv:focus{outline:none;border-color:#4f8cff}
+.btns{display:flex;gap:10px;margin-top:12px;align-items:center}
+button{background:#1d2c4a;border:1px solid #2f4570;color:#dfe8fa;font-weight:600;border-radius:8px;padding:9px 16px;cursor:pointer;font-size:13px;transition:.15s}
+button:hover{background:#273966;border-color:#4f8cff}
+button.primary{background:linear-gradient(135deg,#2a61d4,#4f8cff);border-color:#4f8cff;color:#fff}
+button.primary:hover{filter:brightness(1.1)}
+button.danger{background:#2a1520;border-color:#7a2c3f;color:#ff9db0}
+button.ghost{background:transparent}
+.hint{color:#6b7489;font-size:12px}
+.sample{cursor:pointer;color:#4f8cff;text-decoration:underline;font-size:12px}
+.statsCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+.sc{background:#0f1626;border:1px solid #1e2740;border-radius:12px;padding:16px}
+.sc .k{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8b93a7}
+.sc .v{font-size:26px;font-weight:700;margin-top:6px}
+.sc .v em{font-style:normal;font-size:12px;color:#8b93a7;font-weight:400}
+.sc.gold .v{color:#f0b429}.sc.blue .v{color:#4f8cff}.sc.green .v{color:#3fb950}.sc.red .v{color:#f85149}
+.panel{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.tablewrap{overflow:auto;max-height:420px;border:1px solid #1e2740;border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{position:sticky;top:0;background:#141d31;color:#8b93a7;text-align:left;padding:9px 10px;cursor:pointer;user-select:none;border-bottom:1px solid #22304d;white-space:nowrap}
+th:hover{color:#4f8cff}
+td{padding:7px 10px;border-bottom:1px solid #16203a;white-space:nowrap}
+tr:hover td{background:#101a2e}
+.sort-arrow{opacity:.55;margin-left:4px}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar input{background:#0a0f1b;border:1px solid #22304d;border-radius:8px;color:#e6edf3;padding:8px 12px;font-size:13px;flex:1;min-width:160px}
+.toolbar input:focus{outline:none;border-color:#4f8cff}
+select{background:#0a0f1b;border:1px solid #22304d;color:#e6edf3;border-radius:8px;padding:8px;font-size:13px}
+canvas#distChart{width:100%;height:180px}
+.empty{color:#6b7489;text-align:center;padding:40px 10px;font-size:14px}
+.hidden{display:none}
+b.num{font-variant-numeric:tabular-nums}
+</style></head>
+<body>
+<header>
+<div class="logo">CZ</div>
+<h1>CHAZAH<small>DATA INTELLIGENCE PLATFORM</small></h1>
+<div class="statsrow">
+<div class="stat"><b>0</b><span>Rows</span></div>
+<div class="stat"><b>0</b><span>Columns</span></div>
+<div class="stat"><b>0</b><span>Numeric</span></div>
+</div>
+</header>
+<div class="wrap">
+<div class="card">
+<h2>1 · Dataset Load</h2>
+<div class="hint">Paste raw CSV data below (with or without a header row), then parse. <span class="sample" id="sampleBtn">load sample dataset ▸</span></div>
+<textarea id="csv" spellcheck="false"></textarea>
+<div class="btns">
+<button class="primary" id="parseBtn">Parse Dataset</button>
+<button id="clearBtn">Clear</button>
+<label class="hint" style="color:#6b7489">Delimiter:
+<input type="radio" name="delim" value="," checked>comma <input type="radio" name="delim" value="\t">tab <input type="radio" name="delim" value=";">semicolon
+</label>
+</div>
+</div>
+
+<div id="results" class="hidden">
+<div class="statsCards" id="statsCards"></div>
+<div class="panel">
+<div>
+<div class="card">
+<h2>2 · Interactive Table <span class="hint">click headers to sort</span></h2>
+<div class="toolbar">
+<input id="search" type="search" placeholder="Search rows…">
+<select id="colSelect"><option value="">All columns</option></select>
+</div>
+<div class="tablewrap"><table id="dataTable"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+</div>
+</div>
+<div class="card">
+<h2>3 · Field Analytics</h2>
+<div id="numCols"></div>
+<canvas id="distChart"></canvas>
+<div id="distDetail" class="hint" style="margin-top:8px"></div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let dataRows=[],headers=[],sortKey=-1,sortAsc=true,activeCol=null;
+
+const delimiter=()=>{const r=document.querySelector('input[name="delim"]:checked');return r?r.value==='\\t'?'\t':r.value:','};
+
+function parseCSV(text,sep){
+  const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length>0);
+  if(!lines.length)return{head:[],rows:[]};
+  const rows=lines.map(l=>{
+    let out=[],cur='',q=false;
+    for(let i=0;i<l.length;i++){const c=l[i];
+      if(q){if(c==='"'){if(l[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+      else if(c==='"')q=true;
+      else if(c===sep){out.push(cur);cur='';}
+      else cur+=c;
+    }
+    out.push(cur);return out.map(s=>s.trim());
+  });
+  return{head:rows[0],rows:rows.slice(1)};
+}
+
+function isNum(v){return v!==undefined&&v!==''&&!isNaN(+v)&&typeof v!=='boolean'}
+
+function stats(){
+  const sc=$('statsCards');sc.innerHTML='';
+  const cards=[['Rows',dataRows.length,'gold'],['Columns',headers.length,'blue'],
+   ['Numeric Fields',headers.filter((_,i)=>dataRows.some(r=>isNum(r[i]))).length,'green'],
+   ['Non-null Cells',dataRows.length*headers.length-dataRows.flat().filter(v=>v===''||v===undefined).length,'blue'],
+   ['Null Cells',dataRows.flat().filter(v=>v===''||v===undefined).length,'red'],
+   ['Unique (col 1)',new Set(dataRows.map(r=>r[0])).size,'gold']];
+  for(const[k,v,c]of cards){sc.insertAdjacentHTML('beforeend',`<div class="sc ${c}"><div class="k">${k}</div><div class="v"><b class="num">${v.toLocaleString()}</b></div></div>`)}
+
+  document.querySelector('.statsrow .stat b').textContent=dataRows.length.toLocaleString();
+  document.querySelectorAll('.statsrow .stat b')[1].textContent=headers.length;
+  document.querySelectorAll('.statsrow .stat b')[2].textContent=headers.filter((_,i)=>dataRows.some(r=>isNum(r[i]))).length;
+
+  $('numCols').innerHTML='';
+  headers.forEach((h,i)=>{
+    const vals=dataRows.map(r=>r[i]).filter(isNum).map(Number);
+    if(!vals.length)return;
+    const mn=Math.min(...vals),mx=Math.max(...vals),mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const el=document.createElement('button');el.style.cssText='margin:4px 6px 4px 0;display:inline-block';
+    el.innerHTML=`${esc(h)} <span style="color:#8b93a7">μ=${mean.toFixed(1)}</span>`;
+    el.onclick=()=>{activeCol={i,vals,mn,mx,mean};drawDist()};
+    $('numCols').appendChild(el);
+  });
+  if(activeCol){const ind=headers.findIndex(h=>document.querySelector(`#numCols button`)&&true);activeCol=null;drawDist();}
+}
+
+function drawDist(){
+  const c=$('distChart'),ctx=c.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const W=c.clientWidth,H=c.clientHeight;
+  c.width=W*dpr;c.height=H*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const{vals,mn,mx,mean}=activeCol||{vals:[],mn:0,mx:0,mean:0};
+  $('distDetail').innerHTML=activeCol?`<b>${esc(headers[activeCol.i])}</b> — min <b class="num">${mn}</b> · max <b class="num">${mx}</b> · mean <b class="num">${mean.toFixed(2)}</b> · n=<b class="num">${vals.length}</b>`:'Select a numeric field above to see its distribution histogram.';
+  if(!vals.length){ctx.fillStyle='#6b7489';ctx.font='12px system-ui';ctx.fillText('No numeric field selected',W/2-70,H/2);return;}
+  const bins=16,step=(mx-mn)/bins;
+  const counts=new Array(bins).fill(0);
+  vals.forEach(v=>{let b=Math.floor((v-mn)/step);if(b>=bins)b=bins-1;counts[b]++;});
+  const maxC=Math.max(...counts);
+  const bw=(W-30)/bins;
+  const gy=ctx.createLinearGradient(0,0,W,0);gy.addColorStop(0,'#4f8cff');gy.addColorStop(1,'#22d3ee');
+  counts.forEach((cnt,i)=>{
+    const h=(H-36)*(cnt/maxC);
+    ctx.fillStyle=gy;ctx.globalAlpha=.9;
+    ctx.fillRect(18+i*bw,H-24-h,bw-3,h);
+  });
+  ctx.globalAlpha=1;ctx.fillStyle='#8b93a7';ctx.font='10px system-ui';
+  ctx.fillText(mn.toFixed(0),14,H-12);ctx.fillText(mx.toFixed(0),W-50,H-12);
+}
+
+function renderTable(){
+  const t=$('thead'),b=$('tbody');t.innerHTML='';b.innerHTML='';
+  const q=$('search').value.toLowerCase(),ci=$('colSelect').value;
+  let rows=dataRows.slice();
+  if(q!==''||ci!==''){rows=rows.filter(r=>{let idxs=ci===''?r.map((_,i)=>i):[+ci];return idxs.some(i=>String(r[i]??'').toLowerCase().includes(q));});}
+  const st=document.createElement('tr');
+  headers.forEach((h,i)=>{
+    const th=document.createElement('th');
+    th.textContent=h+((i===sortKey)?(sortAsc?' ▲':' ▼'):'');
+    th.onclick=()=>{sortKey=i;sortAsc=sortKey===i?!sortAsc:true;renderTable()};
+    st.appendChild(th);
+  });
+  t.appendChild(st);
+  $('colSelect').innerHTML='<option value="">All columns</option>'+headers.map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join('');
+  if(ci!=='')$('colSelect').value=ci;
+  if(sortKey>-1)rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];const nx=isNum(x),ny=isNum(y);if(nx&&ny)return sortAsc?x-y:y-x;return sortAsc?String(x).localeCompare(String(y)):String(y).localeCompare(String(x));});
+  rows.slice(0,1000).forEach(r=>{
+    const tr=document.createElement('tr');
+    r.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    b.appendChild(tr);
+  });
+  if(!rows.length)b.innerHTML='<tr><td colspan="'+headers.length+'" class="empty">No rows match</td></tr>';
+}
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function load(){
+  const{head,rows}=parseCSV($('csv').value,delimiter());
+  if(!rows.length){alert('No data rows found. Check your CSV and delimiter.');return;}
+  headers=head;dataRows=rows;sortKey=-1;activeCol=null;
+  $('results').classList.remove('hidden');
+  stats();renderTable();drawDist();
+}
+
+$('parseBtn').onclick=load;
+$('search').addEventListener('input',renderTable);
+$('colSelect').addEventListener('change',renderTable);
+$('clearBtn').onclick=()=>{$('csv').value='';$('results').classList.add('hidden');document.querySelectorAll('.statsrow .stat b')[0].textContent='0';document.querySelectorAll('.statsrow .stat b')[1].textContent='0';document.querySelectorAll('.statsrow .stat b')[2].textContent='0';};
+$('sampleBtn').onclick=()=>{
+  $('csv').value='city,population,area_km2,temp_c,precip_mm\nTokyo,37400068,2194,16.3,1528\nDelhi,30290936,1484,25.3,790\nShanghai,26317104,6340,17.6,1166\nSao Paulo,21846507,1521,19.4,1433\nMexico City,21671908,1485,17.0,833\nCairo,20484965,3085,21.7,25\nDhaka,20283552,306,26.1,2081\nMumbai,19980406,4355,27.0,2430\nBeijing,19618367,16411,12.9,571\nOsaka,19322274,225,16.6,1279\nKarachi,16206744,3780,26.5,167\nBuenos Aires,14967000,203,17.6,1174\nIstanbul,15244388,5461,14.1,810\nLagos,14862300,1171,27.0,1638\nKolkata,14980282,205,26.7,1240\nNew York City,18804190,12227,12.9,1193\nBangkok,10439525,1569,28.3,1671\nKinshasa,11855175,9965,25.1,1377\nLima,10919457,2672,18.9,14\nJakarta,10770487,1765,27.3,1742';
+  load();
+};
+window.addEventListener('resize',()=>{if(!$('results').classList.contains('hidden'))drawDist();});
+</script>
+</body></html>
