@@ -61,10 +61,15 @@ b.num{font-variant-numeric:tabular-nums}
 <div class="wrap">
 <div class="card">
 <h2>1 · Dataset Load</h2>
-<div class="hint">Paste raw CSV data below (with or without a header row), then parse. <span class="sample" id="sampleBtn">load sample dataset ▸</span></div>
+<div class="hint">Paste raw CSV data below (with or without a header row), then parse. <span class="sample" id="sampleBtn">load example dataset ▸</span></div>
 <textarea id="csv" spellcheck="false"></textarea>
 <div class="btns">
 <button class="primary" id="parseBtn">Parse Dataset</button>
+<label class="hint" style="color:#6b7489">Load CSV file
+<input type="file" id="fileInput" accept=".csv,text/csv" style="display:none">
+<button type="button" id="fileBtn">Choose file</button>
+</label>
+<button id="aiBtn">AI field analysis</button>
 <button id="clearBtn">Clear</button>
 <label class="hint" style="color:#6b7489">Delimiter:
 <input type="radio" name="delim" value="," checked>comma <input type="radio" name="delim" value="\t">tab <input type="radio" name="delim" value=";">semicolon
@@ -86,7 +91,11 @@ b.num{font-variant-numeric:tabular-nums}
 </div>
 </div>
 <div class="card">
-<h2>3 · Field Analytics</h2>
+<h2>3 · AI Field Analysis</h2>
+<pre id="aiOut" style="white-space:pre-wrap;background:#0a0f1b;border:1px solid #22304d;border-radius:8px;padding:12px;color:#c9d4f2;min-height:60px;font:12px/1.5 ui-monospace,Menlo,monospace">Parse a dataset, then run the local model for a grounded field summary.</pre>
+</div>
+<div class="card">
+<h2>4 · Field Analytics</h2>
 <div id="numCols"></div>
 <canvas id="distChart"></canvas>
 <div id="distDetail" class="hint" style="margin-top:8px"></div>
@@ -203,6 +212,34 @@ function load(){
 }
 
 $('parseBtn').onclick=load;
+$('fileBtn').onclick=()=>$('fileInput').click();
+$('fileInput').addEventListener('change',async()=>{
+  const file=$('fileInput').files&&$('fileInput').files[0];
+  if(!file)return;
+  $('csv').value=await file.text();
+  load();
+});
+$('aiBtn').onclick=async()=>{
+  const out=$('aiOut');
+  if(!headers.length||!dataRows.length){out.textContent='Parse a dataset first.';return;}
+  const numeric={};
+  headers.forEach((h,i)=>{
+    const vals=dataRows.map(r=>r[i]).filter(isNum).map(Number);
+    if(!vals.length)return;
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    numeric[h]={count:vals.length,min:Math.min(...vals),max:Math.max(...vals),mean:Number(mean.toFixed(3))};
+  });
+  const summary={rows:dataRows.length,columns:headers.length,headers,numeric,sample:dataRows.slice(0,20)};
+  out.textContent='Running local model analysis…';
+  if(!window.PortfolioBackend){out.textContent='Portfolio backend is still loading. Try again in a moment.';return;}
+  try{
+    const result=await window.PortfolioBackend.chat([
+      {role:'system',content:'You are a data analyst. Use only the provided dataset summary. Report concrete patterns, data-quality issues, and useful next checks. Do not invent columns or values.'},
+      {role:'user',content:JSON.stringify(summary)}
+    ]);
+    out.textContent=result.text+(result.model?`\n\n— ${result.model} · ${result.latencyMs}ms`:'');
+  }catch(error){out.textContent='Analysis failed: '+error.message;}
+};
 $('search').addEventListener('input',renderTable);
 $('colSelect').addEventListener('change',renderTable);
 $('clearBtn').onclick=()=>{$('csv').value='';$('results').classList.add('hidden');document.querySelectorAll('.statsrow .stat b')[0].textContent='0';document.querySelectorAll('.statsrow .stat b')[1].textContent='0';document.querySelectorAll('.statsrow .stat b')[2].textContent='0';};
